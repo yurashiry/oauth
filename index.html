@@ -205,7 +205,6 @@
             text-decoration: none;
         }
 
-        /* Анимация экрана загрузки */
         .loading-overlay {
             display: none;
             position: fixed;
@@ -231,21 +230,18 @@
 </head>
 <body>
 
-    <!-- Эмуляция загрузки -->
     <div class="loading-overlay" id="loading">
         <div class="spinner"></div>
     </div>
 
     <div class="container">
         <div class="card" id="loginForm">
-            <!-- Логотип -->
             <div class="logo">
                 <div class="logo-icon">WR</div>
                 <h1>WR <span>Auth</span></h1>
             </div>
             <p class="subtitle">Единая авторизация для твоих сервисов</p>
 
-            <!-- Форма логина -->
             <form id="loginFormInner" onsubmit="handleLogin(event)">
                 <div class="form-group">
                     <label>Email</label>
@@ -258,10 +254,8 @@
                 <button type="submit" class="btn btn-primary">Войти</button>
             </form>
 
-            <!-- Разделитель -->
             <div class="divider"><span>или</span></div>
 
-            <!-- Кнопка Яндекса -->
             <button class="btn btn-yandex" onclick="loginWithYandex()">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="12" fill="#ff8c00"/>
@@ -270,7 +264,6 @@
                 Войти через Яндекс
             </button>
 
-            <!-- Сообщения -->
             <div class="message" id="loginMessage"></div>
             <p class="footer">
                 Нет аккаунта? <a href="register.html" style="color: var(--accent);">Зарегистрироваться</a>
@@ -279,14 +272,11 @@
     </div>
 
     <script>
-        // Конфигурация (замени на URL своих функций после деплоя)
-        const FUNCTIONS_URL = 'https://functions.yandexcloud.net/<твой-id-функции>';
-        const AUTH_REDIRECT_URL = FUNCTIONS_URL; // Callback URL
+        const AUTH_START_URL = 'https://functions.yandexcloud.net/d4eb18ccuh5cpbe3afjc';
+        const AUTH_CALLBACK_URL = 'https://functions.yandexcloud.net/d4etmii81siuv4mn5lo4';
 
-        // Получаем ID функции из URL
         const urlParams = new URLSearchParams(window.location.search);
 
-        // Показываем сообщения
         function showMessage(elementId, text, type) {
             const el = document.getElementById(elementId);
             el.textContent = text;
@@ -294,12 +284,10 @@
             setTimeout(() => { el.className = 'message'; }, 4000);
         }
 
-        // Показать/скрыть загрузку
         function setLoading(show) {
             document.getElementById('loading').classList.toggle('active', show);
         }
 
-        // Обработка логина (чисто демо — в реальности будет запрос к твоему API)
         function handleLogin(e) {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value;
@@ -307,34 +295,25 @@
 
             setLoading(true);
 
-            // Эмуляция проверки (в реальности — POST к твоему API)
             setTimeout(() => {
-                // Сохраняем "сессию"
                 const user = { email, name: email.split('@')[0], loggedAt: new Date().toISOString() };
                 localStorage.setItem('wr_user', JSON.stringify(user));
 
                 setLoading(false);
                 showMessage('loginMessage', 'Успешный вход! Перенаправляем...', 'success');
 
-                // Перенаправление (например, на дашборд)
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 1200);
             }, 1000);
         }
 
-        // Вход через Яндекс
         function loginWithYandex() {
-            const yandexAuthURL = FUNCTIONS_URL + '/auth';
-            // Генерируем state для защиты CSRF
             const state = Math.random().toString(36).substring(2, 15);
             localStorage.setItem('wr_oauth_state', state);
-
-            // Перенаправляем на Яндекс
-            window.location.href = yandexAuthURL + '?state=' + state;
+            window.location.href = AUTH_START_URL + '?state=' + state;
         }
 
-        // Проверка, вернулись ли с Яндекса (callback)
         if (urlParams.has('code')) {
             const code = urlParams.get('code');
             const state = urlParams.get('state');
@@ -345,8 +324,7 @@
                 localStorage.removeItem('wr_oauth_state');
             } else {
                 setLoading(true);
-                // Отправляем code на бэкенд для обмена на токен
-                fetch(FUNCTIONS_URL + '/callback?code=' + encodeURIComponent(code))
+                fetch(AUTH_CALLBACK_URL + '?code=' + encodeURIComponent(code))
                     .then(r => r.json())
                     .then(data => {
                         if (data.success) {
@@ -354,7 +332,7 @@
                             showMessage('loginMessage', 'Вход через Яндекс успешен!', 'success');
                             setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
                         } else {
-                            showMessage('loginMessage', 'Ошибка авторизации', 'error');
+                            showMessage('loginMessage', 'Ошибка авторизации: ' + (data.error || 'неизвестная ошибка'), 'error');
                         }
                     })
                     .catch(() => {
@@ -366,9 +344,8 @@
                     });
             }
 
-            // Убираем параметры из URL
             window.history.replaceState({}, document.title, window.location.pathname);
         }
     </script>
 </body>
-  </html>
+</html>
