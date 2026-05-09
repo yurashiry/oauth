@@ -202,8 +202,6 @@
                 return;
             }
 
-            // В реальном проекте — POST на твой API
-            // Пока сохраняем локально (демо)
             const users = JSON.parse(localStorage.getItem('wr_users') || '[]');
             if (users.find(u => u.email === email)) {
                 showMessage('Этот email уже зарегистрирован', 'error');
