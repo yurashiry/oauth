@@ -169,7 +169,6 @@
     <script>
         const user = JSON.parse(localStorage.getItem('wr_user') || '{}');
 
-        // Если нет сессии — редирект на логин
         if (!user.email) {
             window.location.href = 'index.html';
         }
