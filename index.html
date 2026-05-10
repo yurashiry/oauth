@@ -272,6 +272,7 @@
     </div>
 
     <script>
+        const AUTH_LOGIN_URL = 'https://functions.yandexcloud.net/d4eb18ccuh5cpbe3afjc';
         const AUTH_START_URL = 'https://functions.yandexcloud.net/d4eb18ccuh5cpbe3afjc';
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -287,24 +288,34 @@
             document.getElementById('loading').classList.toggle('active', show);
         }
 
-        function handleLogin(e) {
+        async function handleLogin(e) {
             e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
+            const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
 
             setLoading(true);
 
-            setTimeout(() => {
-                const user = { email, name: email.split('@')[0], loggedAt: new Date().toISOString() };
-                localStorage.setItem('wr_user', JSON.stringify(user));
+            try {
+                const response = await fetch(AUTH_LOGIN_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
 
+                const data = await response.json();
+
+                if (data.success) {
+                    localStorage.setItem('wr_user', JSON.stringify(data.user));
+                    showMessage('loginMessage', 'Успешный вход! Перенаправляем...', 'success');
+                    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
+                } else {
+                    showMessage('loginMessage', data.error || 'Неверный email или пароль', 'error');
+                }
+            } catch(e) {
+                showMessage('loginMessage', 'Сервер недоступен', 'error');
+            } finally {
                 setLoading(false);
-                showMessage('loginMessage', 'Успешный вход! Перенаправляем...', 'success');
-
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1200);
-            }, 1000);
+            }
         }
 
         function loginWithYandex() {
