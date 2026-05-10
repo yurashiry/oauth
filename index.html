@@ -273,7 +273,6 @@
 
     <script>
         const AUTH_START_URL = 'https://functions.yandexcloud.net/d4eb18ccuh5cpbe3afjc';
-        const AUTH_CALLBACK_URL = 'https://functions.yandexcloud.net/d4etmii81siuv4mn5lo4';
 
         const urlParams = new URLSearchParams(window.location.search);
 
@@ -281,7 +280,7 @@
             const el = document.getElementById(elementId);
             el.textContent = text;
             el.className = 'message ' + type;
-            setTimeout(() => { el.className = 'message'; }, 4000);
+            setTimeout(() => { el.className = 'message'; }, 5000);
         }
 
         function setLoading(show) {
@@ -314,8 +313,9 @@
             window.location.href = AUTH_START_URL + '?state=' + state;
         }
 
-        if (urlParams.has('code')) {
-            const code = urlParams.get('code');
+        // Обработка возврата с Яндекса
+        if (urlParams.has('user')) {
+            const userParam = urlParams.get('user');
             const state = urlParams.get('state');
             const savedState = localStorage.getItem('wr_oauth_state');
 
@@ -323,27 +323,23 @@
                 showMessage('loginMessage', 'Ошибка безопасности (state mismatch)', 'error');
                 localStorage.removeItem('wr_oauth_state');
             } else {
-                setLoading(true);
-                fetch(AUTH_CALLBACK_URL + '?code=' + encodeURIComponent(code))
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.success) {
-                            localStorage.setItem('wr_user', JSON.stringify(data.user));
-                            showMessage('loginMessage', 'Вход через Яндекс успешен!', 'success');
-                            setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
-                        } else {
-                            showMessage('loginMessage', 'Ошибка авторизации: ' + (data.error || 'неизвестная ошибка'), 'error');
-                        }
-                    })
-                    .catch(() => {
-                        showMessage('loginMessage', 'Сервер недоступен', 'error');
-                    })
-                    .finally(() => {
-                        setLoading(false);
-                        localStorage.removeItem('wr_oauth_state');
-                    });
+                try {
+                    const user = JSON.parse(decodeURIComponent(userParam));
+                    localStorage.setItem('wr_user', JSON.stringify(user));
+                    showMessage('loginMessage', 'Вход через Яндекс успешен! Перенаправляем...', 'success');
+                    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+                } catch(e) {
+                    showMessage('loginMessage', 'Ошибка обработки данных', 'error');
+                }
+                localStorage.removeItem('wr_oauth_state');
             }
 
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        if (urlParams.has('error')) {
+            const errorMsg = urlParams.get('error');
+            showMessage('loginMessage', 'Ошибка: ' + decodeURIComponent(errorMsg), 'error');
             window.history.replaceState({}, document.title, window.location.pathname);
         }
     </script>
